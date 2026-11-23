@@ -1,0 +1,38 @@
+name: Compilation UNLU Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Haskell Stack
+        run: choco install haskell-stack -y
+
+      - name: Compiler ud2drs
+        working-directory: pipeline/src/ud2drs
+        run: |
+          stack setup
+          stack build --copy-bins --local-bin-path "$env:GITHUB_WORKSPACE\dist"
+
+      - name: Verifier executable
+        run: |
+          if (!(Test-Path dist/ud2drs-exe.exe)) {
+            throw "Executable introuvable"
+          }
+          Get-ChildItem dist
+
+      - name: Recuperer executable Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: UNLU-Windows-64
+          path: dist/
+          if-no-files-found: error
